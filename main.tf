@@ -17,9 +17,10 @@ provider "aws" {
 resource "aws_instance" "ec2_instance" {
   ami           = "ami-02f47fa62c613afb4"
   instance_type = "t2.micro"
+  count         = var.instance_count
 
   tags = {
-    Name = var.instance_name
+    Name = "${var.instance_name}-${count.index + 1}"
   }
 }
 

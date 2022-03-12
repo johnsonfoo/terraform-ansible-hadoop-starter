@@ -4,3 +4,8 @@ variable "instance_name" {
   default     = "EC2-Instance"
 }
 
+variable "instance_count" {
+  description = "Number of EC2 instances to provision"
+  type        = number
+  default     = 4
+}
