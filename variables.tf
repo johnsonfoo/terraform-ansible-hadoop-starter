@@ -9,3 +9,15 @@ variable "instance_count" {
   type        = number
   default     = 4
 }
+
+variable "private_key_path" {
+  description = "Path to private key file"
+  type        = string
+  default     = "~/.ssh/aws_key"
+}
+
+variable "public_key_path" {
+  description = "Path to private key file"
+  type        = string
+  default     = "~/.ssh/aws_key.pub"
+}
