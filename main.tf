@@ -14,10 +14,10 @@ provider "aws" {
   region  = "ap-southeast-1"
 }
 
-resource "aws_instance" "ec2_instance" {
+resource "aws_instance" "hadoop_master_ec2_instance" {
   ami                    = "ami-02f47fa62c613afb4"
   instance_type          = "t2.micro"
-  count                  = var.instance_count
+  count                  = var.hadoop_master_instance_count
   key_name               = "aws_key"
   vpc_security_group_ids = [aws_security_group.ec2_security_group.id]
 
@@ -29,7 +29,26 @@ resource "aws_instance" "ec2_instance" {
   }
 
   tags = {
-    Name = "${var.instance_name}-${count.index + 1}"
+    Name = "${var.hadoop_master_instance_name}"
+  }
+}
+
+resource "aws_instance" "hadoop_worker_ec2_instance" {
+  ami                    = "ami-02f47fa62c613afb4"
+  instance_type          = "t2.micro"
+  count                  = var.hadoop_worker_instance_count
+  key_name               = "aws_key"
+  vpc_security_group_ids = [aws_security_group.ec2_security_group.id]
+
+  connection {
+    type        = "ssh"
+    user        = "ec2-user"
+    host        = self.public_ip
+    private_key = file("${var.private_key_path}")
+  }
+
+  tags = {
+    Name = "${var.hadoop_worker_instance_name}${count.index + 1}"
   }
 }
 
