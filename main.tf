@@ -142,11 +142,44 @@ resource "aws_key_pair" "deployer" {
 resource "aws_security_group" "ec2_security_group" {
   ingress = [
     {
-      description      = ""
+      description      = "SSH"
       from_port        = 22
       to_port          = 22
       protocol         = "tcp"
-      cidr_blocks      = ["0.0.0.0/0", ]
+      cidr_blocks      = ["0.0.0.0/0"]
+      ipv6_cidr_blocks = []
+      prefix_list_ids  = []
+      security_groups  = []
+      self             = false
+    },
+    {
+      description      = "NameNode WebUI"
+      from_port        = 50070
+      to_port          = 50070
+      protocol         = "tcp"
+      cidr_blocks      = ["0.0.0.0/0"]
+      ipv6_cidr_blocks = []
+      prefix_list_ids  = []
+      security_groups  = []
+      self             = false
+    },
+    {
+      description      = "NameNode Metadata Service"
+      from_port        = 9000
+      to_port          = 9000
+      protocol         = "tcp"
+      cidr_blocks      = ["0.0.0.0/0"]
+      ipv6_cidr_blocks = []
+      prefix_list_ids  = []
+      security_groups  = []
+      self             = false
+    },
+    {
+      description      = "DataNode WebUI"
+      from_port        = 50075
+      to_port          = 50075
+      protocol         = "tcp"
+      cidr_blocks      = ["0.0.0.0/0"]
       ipv6_cidr_blocks = []
       prefix_list_ids  = []
       security_groups  = []
