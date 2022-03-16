@@ -82,6 +82,9 @@ resource "aws_instance" "hadoop_master_ec2_instance" {
       "echo \"Host namenode\n    HostName ${self.private_dns}\n    User ec2-user\n    IdentityFile ~/.ssh/id_rsa\" >> ~/.ssh/config",
       "worker_private_dns_list=(${join(" ", aws_instance.hadoop_worker_ec2_instance[*].private_dns)})",
       "for i in $${!worker_private_dns_list[@]}; do echo \"Host datanode$((i+1))\n    HostName $${worker_private_dns_list[$i]}\n    User ec2-user\n    IdentityFile ~/.ssh/id_rsa\" >> ~/.ssh/config; done",
+      "ssh-keyscan -H ${self.private_dns} >> ~/.ssh/known_hosts",
+      "ssh-keyscan -H 0.0.0.0 >> ~/.ssh/known_hosts",
+      "for i in $${!worker_private_dns_list[@]}; do ssh-keyscan -H $${worker_private_dns_list[$i]} >> ~/.ssh/known_hosts; done",
       "chmod 600 ~/.ssh/config"
     ]
   }
