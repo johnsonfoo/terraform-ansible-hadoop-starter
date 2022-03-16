@@ -162,14 +162,16 @@ resource "aws_security_group" "ec2_security_group" {
 }
 
 resource "null_resource" "hadoop_worker_ec2_instance" {
+  count = var.hadoop_worker_instance_count
+
   triggers = {
-    cluster_instance_ids = join(",", aws_instance.hadoop_worker_ec2_instance.*.id)
+    cluster_instance_ids = aws_instance.hadoop_worker_ec2_instance.*.id[count.index]
   }
 
   connection {
     type        = "ssh"
     user        = "ec2-user"
-    host        = element(aws_instance.hadoop_worker_ec2_instance.*.public_ip, 0)
+    host        = aws_instance.hadoop_worker_ec2_instance.*.public_ip[count.index]
     private_key = file("${var.private_key_path}")
   }
 
