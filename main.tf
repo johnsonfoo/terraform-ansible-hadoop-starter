@@ -22,7 +22,7 @@ resource "aws_instance" "hadoop_master_ec2_instance" {
   vpc_security_group_ids = [aws_security_group.ec2_security_group.id]
 
   tags = {
-    Name = "${var.hadoop_master_instance_name}"
+    Name = var.hadoop_master_instance_name
   }
 }
 
@@ -40,7 +40,7 @@ resource "aws_instance" "hadoop_worker_ec2_instance" {
 
 resource "aws_key_pair" "deployer" {
   key_name   = "aws_key"
-  public_key = file("${var.public_key_path}")
+  public_key = file(var.public_key_path)
 }
 
 resource "aws_security_group" "ec2_security_group" {
@@ -112,7 +112,7 @@ resource "null_resource" "hadoop_master_ec2_instance" {
     type        = "ssh"
     user        = "ec2-user"
     host        = aws_instance.hadoop_master_ec2_instance.*.public_ip[count.index]
-    private_key = file("${var.private_key_path}")
+    private_key = file(var.private_key_path)
   }
 
   # Install java and xmlstarlet
@@ -209,7 +209,7 @@ resource "null_resource" "hadoop_worker_ec2_instance" {
     type        = "ssh"
     user        = "ec2-user"
     host        = aws_instance.hadoop_worker_ec2_instance.*.public_ip[count.index]
-    private_key = file("${var.private_key_path}")
+    private_key = file(var.private_key_path)
   }
 
   # Install java and xmlstarlet
