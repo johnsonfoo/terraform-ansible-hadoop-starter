@@ -29,7 +29,7 @@ variable "private_key_path" {
 }
 
 variable "public_key_path" {
-  description = "Path to private key file"
+  description = "Path to public key file"
   type        = string
   default     = "~/.ssh/aws_key.pub"
 }
