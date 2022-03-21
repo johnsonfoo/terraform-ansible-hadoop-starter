@@ -26,6 +26,13 @@ resource "aws_instance" "hadoop_master_ec2_instance" {
   }
 }
 
+locals {
+  hadoop_master_private_ip       = aws_instance.hadoop_master_ec2_instance[0].private_ip
+  hadoop_master_private_dns      = aws_instance.hadoop_master_ec2_instance[0].private_dns
+  hadoop_worker_private_ip_list  = join(" ", aws_instance.hadoop_worker_ec2_instance[*].private_ip)
+  hadoop_worker_private_dns_list = join(" ", aws_instance.hadoop_worker_ec2_instance[*].private_dns)
+}
+
 resource "aws_instance" "hadoop_worker_ec2_instance" {
   ami                    = "ami-02f47fa62c613afb4"
   instance_type          = "t2.micro"
@@ -162,12 +169,12 @@ resource "null_resource" "hadoop_master_ec2_instance" {
   provisioner "remote-exec" {
     inline = [
       "cd $HADOOP_CONF_DIR",
-      "sudo xmlstarlet ed -L -s /configuration -t elem -n property -s /configuration/property -t elem -n name -v fs.defaultFS -s /configuration/property -t elem -n value -v hdfs://${aws_instance.hadoop_master_ec2_instance[0].private_dns}:9000 core-site.xml",
+      "sudo xmlstarlet ed -L -s /configuration -t elem -n property -s /configuration/property -t elem -n name -v fs.defaultFS -s /configuration/property -t elem -n value -v hdfs://${local.hadoop_master_private_dns}:9000 core-site.xml",
       "sudo xmlstarlet ed -L core-site.xml",
-      "sudo xmlstarlet ed -L -s /configuration -t elem -n property -s /configuration/property -t elem -n name -v yarn.nodemanager.aux-services -s /configuration/property -t elem -n value -v mapreduce_shuffle -s /configuration -t elem -n property -s /configuration/property[2] -t elem -n name -v yarn.resourcemanager.hostname -s /configuration/property[2] -t elem -n value -v ${aws_instance.hadoop_master_ec2_instance[0].private_dns} yarn-site.xml",
+      "sudo xmlstarlet ed -L -s /configuration -t elem -n property -s /configuration/property -t elem -n name -v yarn.nodemanager.aux-services -s /configuration/property -t elem -n value -v mapreduce_shuffle -s /configuration -t elem -n property -s /configuration/property[2] -t elem -n name -v yarn.resourcemanager.hostname -s /configuration/property[2] -t elem -n value -v ${local.hadoop_master_private_dns} yarn-site.xml",
       "sudo xmlstarlet ed -L yarn-site.xml",
       "sudo cp mapred-site.xml.template mapred-site.xml",
-      "sudo xmlstarlet ed -L -s /configuration -t elem -n property -s /configuration/property -t elem -n name -v mapreduce.jobtracker.address -s /configuration/property -t elem -n value -v ${aws_instance.hadoop_master_ec2_instance[0].private_dns}:54311 -s /configuration -t elem -n property -s /configuration/property[2] -t elem -n name -v mapreduce.framework.name -s /configuration/property[2] -t elem -n value -v yarn mapred-site.xml",
+      "sudo xmlstarlet ed -L -s /configuration -t elem -n property -s /configuration/property -t elem -n name -v mapreduce.jobtracker.address -s /configuration/property -t elem -n value -v ${local.hadoop_master_private_dns}:54311 -s /configuration -t elem -n property -s /configuration/property[2] -t elem -n name -v mapreduce.framework.name -s /configuration/property[2] -t elem -n value -v yarn mapred-site.xml",
       "sudo xmlstarlet ed -L mapred-site.xml"
     ]
   }
@@ -177,10 +184,10 @@ resource "null_resource" "hadoop_master_ec2_instance" {
     inline = [
       "ssh-keygen -f ~/.ssh/id_rsa -t rsa -P \"\"",
       "cat ~/.ssh/id_rsa.pub >> ~/.ssh/authorized_keys",
-      "echo \"Host namenode\n    HostName ${aws_instance.hadoop_master_ec2_instance[0].private_dns}\n    User ec2-user\n    IdentityFile ~/.ssh/id_rsa\" >> ~/.ssh/config",
-      "worker_private_dns_list=(${join(" ", aws_instance.hadoop_worker_ec2_instance[*].private_dns)})",
+      "echo \"Host namenode\n    HostName ${local.hadoop_master_private_dns}\n    User ec2-user\n    IdentityFile ~/.ssh/id_rsa\" >> ~/.ssh/config",
+      "worker_private_dns_list=(${local.hadoop_worker_private_dns_list})",
       "for i in $${!worker_private_dns_list[@]}; do echo \"Host datanode$((i+1))\n    HostName $${worker_private_dns_list[$i]}\n    User ec2-user\n    IdentityFile ~/.ssh/id_rsa\" >> ~/.ssh/config; done",
-      "ssh-keyscan -H ${aws_instance.hadoop_master_ec2_instance[0].private_dns} >> ~/.ssh/known_hosts",
+      "ssh-keyscan -H ${local.hadoop_master_private_dns} >> ~/.ssh/known_hosts",
       "ssh-keyscan -H 0.0.0.0 >> ~/.ssh/known_hosts",
       "for i in $${!worker_private_dns_list[@]}; do ssh-keyscan -H $${worker_private_dns_list[$i]} >> ~/.ssh/known_hosts; done",
       "chmod 600 ~/.ssh/config",
@@ -196,16 +203,16 @@ resource "null_resource" "hadoop_master_ec2_instance" {
     inline = [
       "cd $HADOOP_CONF_DIR",
       "sudo rm /etc/hosts",
-      "echo ${aws_instance.hadoop_master_ec2_instance[0].private_ip} ${aws_instance.hadoop_master_ec2_instance[0].private_dns} | sudo tee -a /etc/hosts",
-      "worker_private_ip_list=(${join(" ", aws_instance.hadoop_worker_ec2_instance[*].private_ip)})",
-      "worker_private_dns_list=(${join(" ", aws_instance.hadoop_worker_ec2_instance[*].private_dns)})",
+      "echo ${local.hadoop_master_private_ip} ${local.hadoop_master_private_dns} | sudo tee -a /etc/hosts",
+      "worker_private_ip_list=(${local.hadoop_worker_private_ip_list})",
+      "worker_private_dns_list=(${local.hadoop_worker_private_dns_list})",
       "for i in $${!worker_private_ip_list[@]}; do echo $${worker_private_ip_list[$i]} $${worker_private_dns_list[$i]} | sudo tee -a /etc/hosts; done",
       "echo \"127.0.0.1 localhost\" | sudo tee -a /etc/hosts",
       "sudo xmlstarlet ed -L -s /configuration -t elem -n property -s /configuration/property -t elem -n name -v dfs.replication -s /configuration/property -t elem -n value -v 3 -s /configuration -t elem -n property -s /configuration/property[2] -t elem -n name -v dfs.namenode.name.dir -s /configuration/property[2] -t elem -n value -v file:///usr/local/hadoop/data/hdfs/namenode hdfs-site.xml",
       "sudo xmlstarlet ed -L hdfs-site.xml",
       "sudo mkdir -p $HADOOP_HOME/data/hdfs/namenode",
       "sudo touch masters",
-      "echo ${aws_instance.hadoop_master_ec2_instance[0].private_dns} | sudo tee -a masters",
+      "echo ${local.hadoop_master_private_dns} | sudo tee -a masters",
       "sudo rm slaves",
       "for i in $${!worker_private_dns_list[@]}; do echo $${worker_private_dns_list[$i]} | sudo tee -a slaves; done",
       "sudo chown -R ec2-user $HADOOP_HOME"
@@ -263,12 +270,12 @@ resource "null_resource" "hadoop_worker_ec2_instance" {
   provisioner "remote-exec" {
     inline = [
       "cd $HADOOP_CONF_DIR",
-      "sudo xmlstarlet ed -L -s /configuration -t elem -n property -s /configuration/property -t elem -n name -v fs.defaultFS -s /configuration/property -t elem -n value -v hdfs://${aws_instance.hadoop_master_ec2_instance[0].private_dns}:9000 core-site.xml",
+      "sudo xmlstarlet ed -L -s /configuration -t elem -n property -s /configuration/property -t elem -n name -v fs.defaultFS -s /configuration/property -t elem -n value -v hdfs://${local.hadoop_master_private_dns}:9000 core-site.xml",
       "sudo xmlstarlet ed -L core-site.xml",
-      "sudo xmlstarlet ed -L -s /configuration -t elem -n property -s /configuration/property -t elem -n name -v yarn.nodemanager.aux-services -s /configuration/property -t elem -n value -v mapreduce_shuffle -s /configuration -t elem -n property -s /configuration/property[2] -t elem -n name -v yarn.resourcemanager.hostname -s /configuration/property[2] -t elem -n value -v ${aws_instance.hadoop_master_ec2_instance[0].private_dns} yarn-site.xml",
+      "sudo xmlstarlet ed -L -s /configuration -t elem -n property -s /configuration/property -t elem -n name -v yarn.nodemanager.aux-services -s /configuration/property -t elem -n value -v mapreduce_shuffle -s /configuration -t elem -n property -s /configuration/property[2] -t elem -n name -v yarn.resourcemanager.hostname -s /configuration/property[2] -t elem -n value -v ${local.hadoop_master_private_dns} yarn-site.xml",
       "sudo xmlstarlet ed -L yarn-site.xml",
       "sudo cp mapred-site.xml.template mapred-site.xml",
-      "sudo xmlstarlet ed -L -s /configuration -t elem -n property -s /configuration/property -t elem -n name -v mapreduce.jobtracker.address -s /configuration/property -t elem -n value -v ${aws_instance.hadoop_master_ec2_instance[0].private_dns}:54311 -s /configuration -t elem -n property -s /configuration/property[2] -t elem -n name -v mapreduce.framework.name -s /configuration/property[2] -t elem -n value -v yarn mapred-site.xml",
+      "sudo xmlstarlet ed -L -s /configuration -t elem -n property -s /configuration/property -t elem -n name -v mapreduce.jobtracker.address -s /configuration/property -t elem -n value -v ${local.hadoop_master_private_dns}:54311 -s /configuration -t elem -n property -s /configuration/property[2] -t elem -n name -v mapreduce.framework.name -s /configuration/property[2] -t elem -n value -v yarn mapred-site.xml",
       "sudo xmlstarlet ed -L mapred-site.xml",
     ]
   }
