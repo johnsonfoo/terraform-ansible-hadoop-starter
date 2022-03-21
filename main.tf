@@ -172,7 +172,11 @@ resource "null_resource" "hadoop_master_ec2_instance" {
       "ssh-keyscan -H ${aws_instance.hadoop_master_ec2_instance[0].private_dns} >> ~/.ssh/known_hosts",
       "ssh-keyscan -H 0.0.0.0 >> ~/.ssh/known_hosts",
       "for i in $${!worker_private_dns_list[@]}; do ssh-keyscan -H $${worker_private_dns_list[$i]} >> ~/.ssh/known_hosts; done",
-      "chmod 600 ~/.ssh/config"
+      "chmod 600 ~/.ssh/config",
+      "echo -e \"${file(var.private_key_path)}\" >> ~/.ssh/aws_key",
+      "chmod 400 ~/.ssh/aws_key",
+      "for i in $${!worker_private_dns_list[@]}; do cat $${worker_private_dns_list[$i]}; done",
+      "for i in $${!worker_private_dns_list[@]}; do cat ~/.ssh/id_rsa.pub | ssh -i ~/.ssh/aws_key ec2-user@$${worker_private_dns_list[$i]} \"cat - >> ~/.ssh/authorized_keys\"; done"
     ]
   }
 
