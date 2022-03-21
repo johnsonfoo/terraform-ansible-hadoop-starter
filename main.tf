@@ -88,6 +88,17 @@ resource "aws_security_group" "ec2_security_group" {
       prefix_list_ids  = []
       security_groups  = []
       self             = false
+    },
+    {
+      description      = "DataNode Data Transfer"
+      from_port        = 50010
+      to_port          = 50010
+      protocol         = "tcp"
+      cidr_blocks      = ["0.0.0.0/0"]
+      ipv6_cidr_blocks = []
+      prefix_list_ids  = []
+      security_groups  = []
+      self             = false
     }
   ]
 
