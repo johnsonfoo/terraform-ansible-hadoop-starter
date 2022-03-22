@@ -119,6 +119,15 @@ resource "aws_security_group" "ec2_security_group" {
   }
 }
 
+data "aws_eip" "hadoop_master_elastic_ip" {
+  public_ip = "3.1.36.136"
+}
+
+resource "aws_eip_association" "hadoop_master_eip_association" {
+  instance_id   = aws_instance.hadoop_master_ec2_instance[0].id
+  allocation_id = data.aws_eip.hadoop_master_elastic_ip.id
+}
+
 resource "null_resource" "hadoop_master_ec2_instance" {
   count = var.hadoop_master_instance_count
 
@@ -129,7 +138,7 @@ resource "null_resource" "hadoop_master_ec2_instance" {
   connection {
     type        = "ssh"
     user        = "ec2-user"
-    host        = aws_instance.hadoop_master_ec2_instance.*.public_ip[count.index]
+    host        = data.aws_eip.hadoop_master_elastic_ip.public_ip
     private_key = file(var.private_key_path)
   }
 
