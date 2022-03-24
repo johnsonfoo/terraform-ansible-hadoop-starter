@@ -1,0 +1,106 @@
+- hosts: masters, workers
+  environment:
+    HADOOP_HOME: /usr/share/hadoop
+    HADOOP_CONF_DIR: /usr/share/hadoop/etc/hadoop
+  tasks:
+    - name: Copy /etc/hosts
+      become: yes
+      copy:
+        src: /etc/hosts
+        dest: /etc/hosts
+    - name: Install java-1.8.0
+      become: yes
+      yum:
+        name: java-1.8.0-openjdk-devel
+        state: latest
+    - name: Add environment variables to bashrc
+      lineinfile:
+        line: "{{ item }}"
+        path: ~/.bashrc
+      with_items:
+        - export JAVA_HOME=$(readlink -f /usr/bin/java | sed 's:/bin/java::')
+        - export PATH=$PATH:$JAVA_HOME/bin
+        - export HADOOP_HOME=/usr/share/hadoop
+        - export PATH=$PATH:$HADOOP_HOME/bin
+        - export PATH=$PATH:$HADOOP_HOME/sbin
+        - export HADOOP_CONF_DIR=$HADOOP_HOME/etc/hadoop
+    - name: Create $HADOOP_HOME directory
+      become: yes
+      file:
+        path: $HADOOP_HOME
+        state: directory
+        owner: ec2-user
+    - name: Check if $HADOOP_HOME directory is empty
+      find:
+        paths: $HADOOP_HOME
+      register: hadoop
+    - name: Download and Extract Hadoop to $HADOOP_HOME
+      unarchive:
+        src: "https://downloads.apache.org/hadoop/common/hadoop-3.3.1/hadoop-3.3.1.tar.gz"
+        dest: $HADOOP_HOME
+        extra_opts: [ --strip-components=1 ]
+        remote_src: yes
+      when: hadoop.matched == 0
+    - name: Copy workers to $HADOOP_CONF_DIR
+      copy:
+        src: ~/workers
+        dest: $HADOOP_CONF_DIR/workers
+    - name: Edit core-site.xml
+      xml:
+        path: $HADOOP_CONF_DIR/core-site.xml
+        xpath: /configuration
+        pretty_print: yes
+        add_children: "{{ item }}"
+        input_type: xml
+      with_items:
+        - <property><name>fs.defaultFS</name><value>hdfs://hadoop-master:9000</value></property>
+        - <property><name>hadoop.tmp.dir</name><value>file:/usr/share/hadoop/tmp</value></property>
+    - name: Edit hdfs-site.xml
+      xml:
+        path: $HADOOP_CONF_DIR/hdfs-site.xml
+        xpath: /configuration
+        pretty_print: yes
+        add_children: "{{ item }}"
+        input_type: xml
+      with_items:
+        - <property><name>dfs.namenode.secondary.http-address</name><value>hadoop-master:50090</value></property>
+        - <property><name>dfs.replication</name><value>3</value></property>
+        - <property><name>dfs.namenode.name.dir</name><value>file:/usr/share/hadoop/tmp/dfs/name</value></property>
+        - <property><name>dfs.datanode.data.dir</name><value>file:/usr/share/hadoop/tmp/dfs/data</value></property>
+        - <property><name>dfs.namenode.datanode.registration.ip-hostname-check</name><value>false</value></property>
+    - name: Edit mapred-site.xml
+      xml:
+        path: $HADOOP_CONF_DIR/mapred-site.xml
+        xpath: /configuration
+        pretty_print: yes
+        add_children: "{{ item }}"
+        input_type: xml
+      with_items:
+        - <property><name>mapreduce.framework.name</name><value>yarn</value></property>
+        - <property><name>mapreduce.jobhistory.address</name><value>hadoop-master:10020</value></property>
+        - <property><name>mapreduce.jobhistory.webapp.address</name><value>hadoop-master:19888</value></property>
+        - <property><name>yarn.app.mapreduce.am.env</name><value>HADOOP_MAPRED_HOME=/usr/share/hadoop</value></property>
+        - <property><name>mapreduce.map.env</name><value>HADOOP_MAPRED_HOME=/usr/share/hadoop</value></property>
+        - <property><name>mapreduce.reduce.env</name><value>HADOOP_MAPRED_HOME=/usr/share/hadoop</value></property>
+    - name: Edit yarn-site.xml
+      xml:
+        path: $HADOOP_CONF_DIR/yarn-site.xml
+        xpath: /configuration
+        pretty_print: yes
+        add_children: "{{ item }}"
+        input_type: xml
+      with_items:
+        - <property><name>yarn.resourcemanager.hostname</name><value>hadoop-master</value></property>
+        - <property><name>yarn.nodemanager.aux-services</name><value>mapreduce_shuffle</value></property>
+        - <property><name>yarn.nodemanager.resource.memory-mb</name><value>3072</value></property>
+        - <property><name>yarn.scheduler.minimum-allocation-mb</name><value>3072</value></property>
+        - <property><name>yarn.app.mapreduce.am.resource-mb</name><value>512</value></property>
+
+- hosts: masters
+  tasks:
+    - name: Format HDFS
+      shell: hdfs namenode -format -nonInteractive
+    - name: Start HDFS
+      shell: start-dfs.sh
+    - name: Start YARN
+      shell: nohup start-yarn.sh

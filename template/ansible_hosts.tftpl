@@ -1,0 +1,7 @@
+[masters]
+hadoop-master
+
+[workers]
+%{ for name in names ~}
+${name}
+%{ endfor ~}
