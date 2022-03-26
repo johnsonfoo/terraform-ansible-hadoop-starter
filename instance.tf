@@ -22,6 +22,11 @@ resource "aws_instance" "hadoop_master" {
     destination = "setup.yml"
   }
 
+  provisioner "file" {
+    source      = "rack_topology.sh"
+    destination = "rack_topology.sh"
+  }
+
   provisioner "remote-exec" {
     inline = [
       "sudo hostnamectl set-hostname ${self.tags.Name}"
@@ -48,6 +53,8 @@ resource "aws_instance" "hadoop_master" {
       "echo -e \"${local.ansible_hosts}\" | sudo tee -a /etc/ansible/hosts >/dev/null",
       # Create temporary /home/ec2-user/workers on master
       "echo -e \"${local.workers}\" > ~/workers",
+      # Create temporary /home/ec2-user/rack_topology.data on master
+      "echo -e \"${local.rack_topology}\" > ~/rack_topology.data",
       # Run our playbook
       "ansible-playbook setup.yml"
     ]
@@ -62,7 +69,8 @@ resource "aws_instance" "hadoop_worker" {
   vpc_security_group_ids = [aws_security_group.ec2_security_group.id]
 
   tags = {
-    Name = "${var.hadoop_worker_instance_name}${count.index + 1}"
+    Name = "${var.hadoop_worker_instance_name}${count.index + 1}",
+    Rack = count.index % 2 == 0 ? "/rack-01" : "/rack-02"
   }
 
   connection {

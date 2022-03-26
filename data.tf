@@ -17,4 +17,14 @@ locals {
       names = aws_instance.hadoop_worker[*].tags.Name
     }
   )
+
+  rack_topology = templatefile(
+    "template/rack_topology.tftpl",
+    {
+      ip_rack_pairs = zipmap(
+        aws_instance.hadoop_worker[*].private_ip,
+        aws_instance.hadoop_worker[*].tags.Rack
+      )
+    }
+  )
 }

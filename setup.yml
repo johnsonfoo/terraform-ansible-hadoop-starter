@@ -45,6 +45,15 @@
       copy:
         src: ~/workers
         dest: $HADOOP_CONF_DIR/workers
+    - name: Copy rack_topology.data to $HADOOP_CONF_DIR
+      copy:
+        src: ~/rack_topology.data
+        dest: $HADOOP_CONF_DIR/rack_topology.data
+    - name: Copy rack_topology.sh to $HADOOP_CONF_DIR
+      copy:
+        src: ~/rack_topology.sh
+        dest: $HADOOP_CONF_DIR/rack_topology.sh
+        mode: '0755'
     - name: Edit core-site.xml
       xml:
         path: $HADOOP_CONF_DIR/core-site.xml
@@ -55,6 +64,7 @@
       with_items:
         - <property><name>fs.defaultFS</name><value>hdfs://hadoop-master:9000</value></property>
         - <property><name>hadoop.tmp.dir</name><value>file:/usr/share/hadoop/tmp</value></property>
+        - <property><name>net.topology.script.file.name</name><value>/usr/share/hadoop/etc/hadoop/rack_topology.sh</value></property>
     - name: Edit hdfs-site.xml
       xml:
         path: $HADOOP_CONF_DIR/hdfs-site.xml
