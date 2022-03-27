@@ -23,6 +23,11 @@ resource "aws_instance" "hadoop_master" {
   }
 
   provisioner "file" {
+    source      = "teardown.yml"
+    destination = "teardown.yml"
+  }
+
+  provisioner "file" {
     source      = "rack_topology.sh"
     destination = "rack_topology.sh"
   }

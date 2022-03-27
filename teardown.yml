@@ -1,0 +1,15 @@
+- hosts: masters, workers
+  tasks:
+    - name: Remove Hadoop data
+      file:
+        path: $HADOOP_HOME/tmp
+        state: absent
+
+- hosts: masters
+  tasks:
+    - name: Stop YARN
+      shell: stop-yarn.sh
+    - name: Stop HDFS
+      shell: stop-dfs.sh
+    - name: Format HDFS
+      shell: hdfs namenode -format -nonInteractive
