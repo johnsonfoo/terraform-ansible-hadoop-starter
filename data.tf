@@ -27,4 +27,14 @@ locals {
       )
     }
   )
+
+  worker_public_hosts = templatefile(
+    "template/worker_hosts.tftpl",
+    {
+      ip_name_pairs = zipmap(
+        aws_instance.hadoop_worker[*].public_ip,
+        aws_instance.hadoop_worker[*].tags.Name
+      )
+    }
+  )
 }

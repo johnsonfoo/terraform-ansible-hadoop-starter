@@ -60,6 +60,8 @@ resource "aws_instance" "hadoop_master" {
       "echo -e \"${local.workers}\" > ~/workers",
       # Create temporary /home/ec2-user/rack_topology.data on master
       "echo -e \"${local.rack_topology}\" > ~/rack_topology.data",
+      # Create file to map public ip for worker on master
+      "echo -e \"${local.worker_public_hosts}\" > ~/public_hosts",
       # Run our playbook
       "ansible-playbook setup.yml"
     ]
