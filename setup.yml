@@ -65,6 +65,7 @@
         - <property><name>fs.defaultFS</name><value>hdfs://hadoop-master:9000</value></property>
         - <property><name>hadoop.tmp.dir</name><value>file:/usr/share/hadoop/tmp</value></property>
         - <property><name>net.topology.script.file.name</name><value>/usr/share/hadoop/etc/hadoop/rack_topology.sh</value></property>
+        - <property><name>hadoop.http.authentication.simple.anonymous.allowed</name><value>false</value></property>
     - name: Edit hdfs-site.xml
       xml:
         path: $HADOOP_CONF_DIR/hdfs-site.xml
