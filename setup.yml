@@ -93,6 +93,18 @@
         - <property><name>yarn.app.mapreduce.am.env</name><value>HADOOP_MAPRED_HOME=/usr/share/hadoop</value></property>
         - <property><name>mapreduce.map.env</name><value>HADOOP_MAPRED_HOME=/usr/share/hadoop</value></property>
         - <property><name>mapreduce.reduce.env</name><value>HADOOP_MAPRED_HOME=/usr/share/hadoop</value></property>
+        # The amount of memory in container for map task
+        - <property><name>mapreduce.map.memory.mb</name><value>256</value></property>
+        # The amount of memory to set aside as JVM heap size in container for map task
+        - <property><name>mapreduce.map.java.opts</name><value>-Xmx204m</value></property>
+        # The amount of memory in container for reduce task
+        - <property><name>mapreduce.reduce.memory.mb</name><value>256</value></property>
+        # The amount of memory to set aside as JVM heap size in container for reduce task
+        - <property><name>mapreduce.reduce.java.opts</name><value>-Xmx204m</value></property>
+        # The amount of memory in container with MapReduce ApplicationMaster
+        - <property><name>yarn.app.mapreduce.am.resource.mb</name><value>256</value></property>
+        # The amount of memory to set aside as JVM heap size in container with MapReduce ApplicationMaster
+        - <property><name>yarn.app.mapreduce.am.command-opts</name><value>-Xmx204m</value></property>
     - name: Edit yarn-site.xml
       xml:
         path: $HADOOP_CONF_DIR/yarn-site.xml
@@ -103,9 +115,20 @@
       with_items:
         - <property><name>yarn.resourcemanager.hostname</name><value>hadoop-master</value></property>
         - <property><name>yarn.nodemanager.aux-services</name><value>mapreduce_shuffle</value></property>
-        - <property><name>yarn.nodemanager.resource.memory-mb</name><value>3072</value></property>
-        - <property><name>yarn.scheduler.minimum-allocation-mb</name><value>3072</value></property>
-        - <property><name>yarn.app.mapreduce.am.resource-mb</name><value>512</value></property>
+        # Total number of vcores available in host that can be allocated for containers
+        - <property><name>yarn.nodemanager.resource.cpu-vcores</name><value>1</value></property>
+        # Minimum number of vcores in container that can be allocated from ResourceManager
+        - <property><name>yarn.scheduler.minimum-allocation-vcores</name><value>1</value></property>
+        # Maximum number of vcores in container that can be allocated from ResourceManager
+        - <property><name>yarn.scheduler.maximum-allocation-vcores</name><value>1</value></property>
+        # Total amount of memory available in host that can be allocated for containers
+        - <property><name>yarn.nodemanager.resource.memory-mb</name><value>512</value></property>
+        # Minimum amount of memory in container that can be allocated from ResourceManager
+        - <property><name>yarn.scheduler.minimum-allocation-mb</name><value>256</value></property>
+        # Maximum amount of memory in container that can be allocated from ResourceManager
+        - <property><name>yarn.scheduler.maximum-allocation-mb</name><value>512</value></property>
+        # Minimum increment setting
+        - <property><name>yarn.scheduler.increment-allocation-mb</name><value>256</value></property>
 
 - hosts: masters
   tasks:
