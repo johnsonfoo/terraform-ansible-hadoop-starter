@@ -7,6 +7,8 @@
 
 - hosts: masters
   tasks:
+    - name: Stop MapReduce JobHistory Server
+      shell: mapred --daemon stop historyserver
     - name: Stop YARN
       shell: stop-yarn.sh
     - name: Stop HDFS
