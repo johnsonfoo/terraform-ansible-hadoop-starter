@@ -36,19 +36,6 @@
         extra_opts: [ --strip-components=1 ]
         remote_src: yes
       when: hadoop.matched == 0
-    - name: Copy workers to $HADOOP_CONF_DIR
-      copy:
-        src: ~/workers
-        dest: $HADOOP_CONF_DIR/workers
-    - name: Copy rack_topology.data to $HADOOP_CONF_DIR
-      copy:
-        src: ~/rack_topology.data
-        dest: $HADOOP_CONF_DIR/rack_topology.data
-    - name: Copy rack_topology.sh to $HADOOP_CONF_DIR
-      copy:
-        src: ~/rack_topology.sh
-        dest: $HADOOP_CONF_DIR/rack_topology.sh
-        mode: '0755'
     - name: Edit core-site.xml
       xml:
         path: $HADOOP_CONF_DIR/core-site.xml
@@ -136,6 +123,19 @@
 
 - hosts: masters
   tasks:
+    - name: Copy workers to $HADOOP_CONF_DIR
+      copy:
+        src: ~/workers
+        dest: $HADOOP_CONF_DIR/workers
+    - name: Copy rack_topology.data to $HADOOP_CONF_DIR
+      copy:
+        src: ~/rack_topology.data
+        dest: $HADOOP_CONF_DIR/rack_topology.data
+    - name: Copy rack_topology.sh to $HADOOP_CONF_DIR
+      copy:
+        src: ~/rack_topology.sh
+        dest: $HADOOP_CONF_DIR/rack_topology.sh
+        mode: '0755'
     - name: Format HDFS
       shell: hdfs namenode -format -nonInteractive
     - name: Start HDFS
