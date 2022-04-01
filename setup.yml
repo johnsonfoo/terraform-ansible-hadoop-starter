@@ -3,11 +3,6 @@
     HADOOP_HOME: /usr/share/hadoop
     HADOOP_CONF_DIR: /usr/share/hadoop/etc/hadoop
   tasks:
-    - name: Copy /etc/hosts
-      become: yes
-      copy:
-        src: /etc/hosts
-        dest: /etc/hosts
     - name: Install java-1.8.0
       become: yes
       yum:
@@ -129,6 +124,15 @@
         - <property><name>yarn.scheduler.maximum-allocation-mb</name><value>512</value></property>
         # Minimum increment setting
         - <property><name>yarn.scheduler.increment-allocation-mb</name><value>256</value></property>
+
+- hosts: workers
+  tasks:
+    # Allows worker to resolve "hadoop-master" inside config files into master IP address
+    - name: Copy /etc/hosts
+      become: yes
+      copy:
+        src: /etc/hosts
+        dest: /etc/hosts
 
 - hosts: masters
   tasks:
